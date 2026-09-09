@@ -302,34 +302,114 @@ if st.session_state.page == "🏠 Home":
         "พร้อมแสดงเปอร์เซ็นต์ความมั่นใจและข้อมูลประกอบ"
     )
 
-    c1, c2, c3 = st.columns(3)
+    # =====================================================
+    # วิเคราะห์ได้จากหน้า Home โดยตรง
+    # =====================================================
+    st.markdown("### 📷 วิเคราะห์ใบกล้วยทันที")
+    st.write("เลือกรูปใบกล้วยจากเครื่อง แล้วกด **🔍 วิเคราะห์ภาพ** ได้เลย")
 
-    with c1:
-        st.markdown("""
-        <div class="card">
-            <h3>📷 วิเคราะห์ภาพ</h3>
-            <p>อัปโหลดภาพใบกล้วยจากอุปกรณ์ของคุณ</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("🔍 ไปหน้าทำนาย", use_container_width=True):
-            st.session_state.page = "🔍 Predict"
+    home_uploaded = st.file_uploader(
+        "อัปโหลดภาพใบกล้วย",
+        type=["jpg", "jpeg", "png", "webp"],
+        key="home_uploader"
+    )
+
+    if home_uploaded is not None:
+        home_image = Image.open(home_uploaded).convert("RGB")
+
+        left, right = st.columns([1, 1])
+
+        with left:
+            st.image(
+                home_image,
+                caption="ภาพที่เลือก",
+                use_container_width=True
+            )
+
+        with right:
+            st.markdown("#### 🤖 ResNet50 พร้อมวิเคราะห์")
+            st.write("ระบบจะจำแนกภาพเป็น 1 ใน 5 Class")
+
+            if st.button(
+                "🔍 วิเคราะห์ภาพ",
+                type="primary",
+                use_container_width=True,
+                key="home_predict_button"
+            ):
+                with st.spinner("AI กำลังวิเคราะห์ภาพ..."):
+                    try:
+                        result = predict_image(home_image)
+                        st.session_state.uploaded_image = home_image
+                        st.session_state.prediction = result
+                        st.success("วิเคราะห์เสร็จแล้ว!")
+                    except Exception as e:
+                        st.error(f"เกิดข้อผิดพลาด: {e}")
+
+    # แสดงผลบนหน้า Home ทันที
+    if st.session_state.prediction is not None:
+
+        predicted_class, confidence, probabilities = st.session_state.prediction
+        info = DISEASE_INFO[predicted_class]
+
+        st.markdown("---")
+        st.markdown("## 📊 ผลการวิเคราะห์")
+
+        if st.session_state.uploaded_image is not None:
+            img_col, result_col = st.columns([1, 1])
+
+            with img_col:
+                st.image(
+                    st.session_state.uploaded_image,
+                    caption="ภาพที่วิเคราะห์",
+                    use_container_width=True
+                )
+
+            with result_col:
+                st.markdown(
+                    f"""
+                    <div class="result-box">
+                        <h3>{info['icon']} ผลการทำนาย</h3>
+                        <h2>{predicted_class}</h2>
+                        <p>ความมั่นใจของโมเดล</p>
+                        <h1>{confidence * 100:.2f}%</h1>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        if predicted_class == "Healthy Banana leaf":
+            st.success("🌱 ใบกล้วยปกติ — โมเดลจำแนกภาพนี้อยู่ในกลุ่มใบกล้วยปกติ")
+        else:
+            st.warning(
+                f"⚠️ พบความผิดปกติ: {predicted_class}\n\n"
+                f"{info['advice']}"
+            )
+
+        st.markdown("### 📈 ความน่าจะเป็นทั้ง 5 Class")
+
+        chart_data = {
+            "Class": CLASS_NAMES,
+            "Probability (%)": [p * 100 for p in probabilities]
+        }
+
+        st.bar_chart(
+            chart_data,
+            x="Class",
+            y="Probability (%)",
+            horizontal=True
+        )
+
+        with st.expander("🩺 ดูแนวทางดูแล / จัดการ", expanded=True):
+            st.write(info["treatment"])
+
+        if st.button(
+            "🔄 เริ่มการวิเคราะห์ใหม่",
+            use_container_width=True,
+            key="home_reset_button"
+        ):
+            st.session_state.uploaded_image = None
+            st.session_state.prediction = None
             st.rerun()
-
-    with c2:
-        st.markdown("""
-        <div class="card">
-            <h3>🤖 ResNet50</h3>
-            <p>โมเดล Deep Learning สำหรับจำแนกใบกล้วย 5 Class</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c3:
-        st.markdown("""
-        <div class="card">
-            <h3>📊 ผลการวิเคราะห์</h3>
-            <p>ดูประเภทและเปอร์เซ็นต์ความมั่นใจของโมเดล</p>
-        </div>
-        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("## 🌱 ประเภทที่ระบบสามารถจำแนก")
