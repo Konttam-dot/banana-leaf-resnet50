@@ -357,15 +357,13 @@ with st.sidebar:
 # HOME
 # =========================================================
 
-if page == "🏠 Home":
+if st.session_state.page == "🏠 Home":
 
     st.markdown(
         """
         <div class="hero">
 
-        <h1>
-        🍌 Banana Leaf AI
-        </h1>
+        <h1>🍌 Banana Leaf AI</h1>
 
         <p>
         ระบบ AI สำหรับจำแนกโรคและความเสียหาย
@@ -377,27 +375,27 @@ if page == "🏠 Home":
         unsafe_allow_html=True
     )
 
-
-    st.markdown(
-        "## 👋 ยินดีต้อนรับ"
-    )
+    st.markdown("## 👋 ยินดีต้อนรับ")
 
     st.write(
         """
-        ระบบนี้สามารถวิเคราะห์ภาพใบกล้วย
+        ระบบสามารถวิเคราะห์ภาพใบกล้วย
         และจำแนกประเภทออกเป็น 5 Class
         พร้อมแสดงเปอร์เซ็นต์ความมั่นใจ
         """
     )
 
-
     st.write("")
 
-
-    # Cards
+    # =====================================================
+    # MENU CARDS
+    # =====================================================
 
     col1, col2, col3 = st.columns(3)
 
+    # -----------------------------------------------------
+    # CARD 1
+    # -----------------------------------------------------
 
     with col1:
 
@@ -405,9 +403,7 @@ if page == "🏠 Home":
             """
             <div class="card">
 
-            <h3>
-            📷 วิเคราะห์ภาพ
-            </h3>
+            <h3>📷 วิเคราะห์ภาพ</h3>
 
             <p>
             อัปโหลดรูปใบกล้วย
@@ -419,6 +415,19 @@ if page == "🏠 Home":
             unsafe_allow_html=True
         )
 
+        if st.button(
+            "🔍 ไปที่หน้าทำนาย",
+            key="predict_button",
+            use_container_width=True
+        ):
+
+            st.session_state.page = "🔍 Predict"
+
+            st.rerun()
+
+    # -----------------------------------------------------
+    # CARD 2
+    # -----------------------------------------------------
 
     with col2:
 
@@ -426,13 +435,11 @@ if page == "🏠 Home":
             """
             <div class="card">
 
-            <h3>
-            🤖 ResNet50
-            </h3>
+            <h3>🤖 ResNet50</h3>
 
             <p>
             โมเดล Deep Learning
-            สำหรับจำแนกใบกล้วย
+            สำหรับจำแนกประเภทใบกล้วย
             </p>
 
             </div>
@@ -440,6 +447,23 @@ if page == "🏠 Home":
             unsafe_allow_html=True
         )
 
+        if st.button(
+            "🤖 ดูรายละเอียดโมเดล",
+            key="model_button",
+            use_container_width=True
+        ):
+
+            st.info(
+                """
+                ResNet50 เป็นโมเดล Deep Learning
+                ที่ใช้สำหรับจำแนกภาพใบกล้วย
+                โดยระบบนี้รองรับทั้งหมด 5 Class
+                """
+            )
+
+    # -----------------------------------------------------
+    # CARD 3
+    # -----------------------------------------------------
 
     with col3:
 
@@ -447,13 +471,11 @@ if page == "🏠 Home":
             """
             <div class="card">
 
-            <h3>
-            📊 ผลการวิเคราะห์
-            </h3>
+            <h3>📚 ข้อมูลโรค</h3>
 
             <p>
-            แสดงผลการทำนาย
-            และเปอร์เซ็นต์ความมั่นใจ
+            ดูข้อมูลโรคและความเสียหาย
+            ของใบกล้วย
             </p>
 
             </div>
@@ -461,14 +483,26 @@ if page == "🏠 Home":
             unsafe_allow_html=True
         )
 
+        if st.button(
+            "📚 ดูข้อมูลโรค",
+            key="disease_button",
+            use_container_width=True
+        ):
+
+            st.session_state.page = "📚 Disease Information"
+
+            st.rerun()
+
+
+    # =====================================================
+    # CLASS INFORMATION
+    # =====================================================
 
     st.divider()
-
 
     st.markdown(
         "## 🌱 ประเภทที่ระบบสามารถจำแนก"
     )
-
 
     for name in class_names:
 
@@ -476,9 +510,7 @@ if page == "🏠 Home":
             f"""
             <div class="card">
 
-            <h3>
-            🌿 {name}
-            </h3>
+            <h3>🌿 {name}</h3>
 
             <p>
             {disease_info[name]}
@@ -488,7 +520,6 @@ if page == "🏠 Home":
             """,
             unsafe_allow_html=True
         )
-
 
 # =========================================================
 # PREDICT
