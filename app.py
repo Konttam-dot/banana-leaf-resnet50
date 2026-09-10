@@ -5,8 +5,9 @@ from torchvision import models, transforms
 from PIL import Image
 import os
 
+
 # =========================================================
-# Banana Leaf AI - ResNet50
+# ตั้งค่าหน้าเว็บ
 # =========================================================
 
 st.set_page_config(
@@ -16,114 +17,118 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -------------------------
-# CSS
-# -------------------------
+
+# =========================================================
+# CSS - ทำให้หน้าตาทันสมัย
+# =========================================================
+
 st.markdown("""
 <style>
-    .stApp {
-        background: #f7faf8;
+
+.main {
+    background-color: #f7faf8;
+}
+
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    max-width: 1200px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, #e8f8ef, #f8fffb);
+    padding: 35px;
+    border-radius: 25px;
+    border: 1px solid #d5eee0;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.hero-title {
+    font-size: 45px;
+    font-weight: 800;
+    color: #183b2a;
+    margin-bottom: 10px;
+}
+
+.hero-subtitle {
+    font-size: 18px;
+    color: #587064;
+}
+
+/* Card */
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid #e2e9e5;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    color: #183b2a;
+}
+
+/* Result */
+.result-normal {
+    background: #e9f8ef;
+    border: 2px solid #9edbb5;
+    padding: 25px;
+    border-radius: 20px;
+    margin-top: 20px;
+}
+
+.result-disease {
+    background: #fff5f3;
+    border: 2px solid #f0aaa0;
+    padding: 25px;
+    border-radius: 20px;
+    margin-top: 20px;
+}
+
+.big-result {
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.confidence {
+    font-size: 42px;
+    font-weight: 800;
+    color: #183b2a;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .hero-title {
+        font-size: 32px;
     }
 
-    .hero {
-        padding: 30px 35px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, #e8f8ef, #f5fbf7);
-        border: 1px solid #d9eee1;
-        margin-bottom: 25px;
+    .hero-subtitle {
+        font-size: 15px;
     }
 
-    .hero h1 {
-        margin: 0;
-        font-size: 42px;
-        color: #183b2a;
+    .big-result {
+        font-size: 24px;
     }
 
-    .hero p {
-        color: #587064;
-        font-size: 17px;
-        margin-top: 10px;
+    .confidence {
+        font-size: 34px;
     }
 
-    .card {
-        background: white;
-        border: 1px solid #e3ebe6;
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: 0 5px 20px rgba(30, 70, 45, 0.06);
-        min-height: 145px;
-        margin-bottom: 18px;
-    }
+}
 
-    .card h3 {
-        color: #183b2a;
-        margin-bottom: 8px;
-    }
-
-    .card p {
-        color: #66756d;
-        margin: 0;
-    }
-
-    .result-box {
-        background: white;
-        border-radius: 20px;
-        border: 1px solid #e3ebe6;
-        padding: 25px;
-        margin-top: 15px;
-    }
-
-    .healthy {
-        background: #eaf8ef;
-        border: 1px solid #bfe4ca;
-        border-radius: 16px;
-        padding: 18px;
-    }
-
-    .warning {
-        background: #fff7e6;
-        border: 1px solid #f3d59b;
-        border-radius: 16px;
-        padding: 18px;
-    }
-
-    .small-note {
-        color: #748078;
-        font-size: 13px;
-    }
-
-    div.stButton > button {
-        border-radius: 12px;
-        font-weight: 600;
-        min-height: 44px;
-    }
-
-    [data-testid="stFileUploader"] {
-        background: white;
-        border-radius: 16px;
-        padding: 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================
-# Session State
-# สำคัญ: ต้องกำหนดก่อนเรียก st.session_state.page
+# Class ของ Dataset
+# สำคัญ: ต้องตรงกับตอน Train
 # =========================================================
-if "page" not in st.session_state:
-    st.session_state.page = "🏠 Home"
 
-if "uploaded_image" not in st.session_state:
-    st.session_state.uploaded_image = None
-
-if "prediction" not in st.session_state:
-    st.session_state.prediction = None
-
-
-# =========================================================
-# Classes
-# =========================================================
 CLASS_NAMES = [
     "Banana Skipper Damage",
     "Black and Yellow Sigatoka",
@@ -132,96 +137,119 @@ CLASS_NAMES = [
     "Panama Wilt Disease"
 ]
 
-# ข้อมูลสำหรับหน้า Disease Information
+
+# =========================================================
+# ข้อมูลโรค
+# =========================================================
+
 DISEASE_INFO = {
+
     "Banana Skipper Damage": {
-        "icon": "🐛",
+        "icon": "🦋",
         "title": "Banana Skipper Damage",
-        "description": "ความเสียหายของใบกล้วยที่เกี่ยวข้องกับหนอนผีเสื้อกล้วย (banana skipper)",
-        "advice": "ควรตรวจดูใบและบริเวณต้นกล้วยอย่างสม่ำเสมอ และกำจัดส่วนที่เสียหายตามแนวทางของแหล่งเกษตรในพื้นที่",
-        "treatment": "แนวทางดูแล: ตรวจหาและเก็บส่วนของใบที่เสียหายมากออกอย่างเหมาะสม ดูแลความสะอาดแปลง และติดตามการระบาดของแมลง หากพบมากควรปรึกษาเจ้าหน้าที่เกษตรเพื่อเลือกวิธีควบคุมที่เหมาะสม"
+        "description": """
+ความเสียหายที่เกี่ยวข้องกับแมลง Banana Skipper
+ซึ่งอาจทำให้ใบกล้วยมีร่องรอยหรือส่วนของใบได้รับความเสียหาย
+""",
+        "advice": """
+🌿 ควรตรวจสอบบริเวณใบและต้นกล้วยอย่างสม่ำเสมอ
+และกำจัดส่วนของใบที่เสียหายมากตามความเหมาะสม
+"""
     },
+
     "Black and Yellow Sigatoka": {
-        "icon": "🍂",
+        "icon": "🦠",
         "title": "Black and Yellow Sigatoka",
-        "description": "โรคใบจุดของกล้วยที่ทำให้เกิดรอยหรือจุดสีเข้มและเหลืองบนใบ",
-        "advice": "ควรสำรวจใบที่มีอาการ ตัดใบที่เสียหายตามความเหมาะสม และปรึกษาเจ้าหน้าที่เกษตรเมื่อพบการระบาด",
-        "treatment": "แนวทางดูแล: ลดแหล่งสะสมเชื้อด้วยการตัดและจัดการใบที่เป็นโรคอย่างเหมาะสม รักษาระยะปลูกและการระบายอากาศของแปลง และติดตามอาการอย่างสม่ำเสมอ หากการระบาดรุนแรงให้ผู้เชี่ยวชาญแนะนำการควบคุมโรค"
+        "description": """
+โรคใบกล้วยที่มีลักษณะเป็นจุดหรือรอยผิดปกติบนใบ
+และสามารถทำให้พื้นที่สีเขียวของใบลดลง
+""",
+        "advice": """
+🌿 ควรตัดแต่งใบที่เป็นโรคและลดความชื้นบริเวณแปลง
+พร้อมติดตามอาการของใบกล้วยอย่างต่อเนื่อง
+"""
     },
+
     "Chewing insect damage on banana leaf": {
-        "icon": "🐞",
-        "title": "Chewing insect Damage",
-        "description": "ความเสียหายจากแมลงกัดกิน ทำให้เกิดรอยแหว่งหรือรูบนใบ",
-        "advice": "ตรวจดูตัวแมลงและร่องรอยบนใบอย่างสม่ำเสมอ และใช้วิธีควบคุมแมลงที่เหมาะสมกับพื้นที่",
-        "treatment": "แนวทางดูแล: สำรวจใต้ใบและบริเวณยอดอย่างสม่ำเสมอ เก็บหรือกำจัดส่วนที่เสียหายมาก และรักษาความสะอาดของแปลง หากพบแมลงจำนวนมากควรปรึกษาเจ้าหน้าที่เกษตรก่อนเลือกวิธีควบคุม"
+        "icon": "🐛",
+        "title": "Chewing insect damage",
+        "description": """
+ความเสียหายจากแมลงกัดกินใบ
+มักสังเกตได้จากบริเวณใบที่มีร่องรอยการกัดกิน
+""",
+        "advice": """
+🌿 ตรวจสอบตัวแมลงหรือร่องรอยบนใบ
+และจัดการแมลงตามวิธีที่เหมาะสมกับการปลูกกล้วย
+"""
     },
+
     "Healthy Banana leaf": {
         "icon": "🌱",
-        "title": "Healthy Banana Leaf",
-        "description": "ใบกล้วยที่โมเดลจำแนกว่าอยู่ในกลุ่มใบปกติ",
-        "advice": "ดูแลน้ำ ปุ๋ย และสภาพแวดล้อมของต้นกล้วยอย่างเหมาะสม พร้อมตรวจใบเป็นประจำ",
-        "treatment": "แนวทางดูแล: รักษาความสมบูรณ์ของต้นด้วยน้ำและธาตุอาหารที่เหมาะสม จัดการวัชพืชและเศษใบในแปลง และตรวจใบเป็นประจำเพื่อพบความผิดปกติได้เร็ว"
+        "title": "Healthy Banana leaf",
+        "description": """
+ใบกล้วยปกติ ไม่พบลักษณะที่ตรงกับ Class
+โรคหรือความเสียหายที่โมเดลได้รับการฝึกให้จำแนก
+""",
+        "advice": """
+✅ ใบกล้วยถูกจำแนกเป็นใบปกติ
+ควรดูแลต้นกล้วยตามปกติและตรวจสอบใบอย่างสม่ำเสมอ
+"""
     },
+
     "Panama Wilt Disease": {
-        "icon": "⚠️",
+        "icon": "🦠",
         "title": "Panama Wilt Disease",
-        "description": "โรคเหี่ยวปานามา ซึ่งเป็นโรคสำคัญของกล้วย",
-        "advice": "หากพบอาการผิดปกติหลายต้น ควรแยกพื้นที่ที่สงสัยและปรึกษาเจ้าหน้าที่เกษตรหรือผู้เชี่ยวชาญ",
-        "treatment": "แนวทางจัดการ: โรคนี้ไม่มีวิธีรักษาต้นที่ติดเชื้อให้กลับมาเป็นปกติได้ง่าย จึงเน้นการป้องกันการแพร่กระจาย เช่น จำกัดการเคลื่อนย้ายดินและอุปกรณ์จากพื้นที่ต้องสงสัย รักษาสุขอนามัยของแปลง และใช้วัสดุปลูกที่ปลอดโรคหรือพันธุ์ที่เหมาะสม โดยควรให้เจ้าหน้าที่เกษตรยืนยันก่อนดำเนินการ"
+        "description": """
+โรคเหี่ยวของกล้วยที่เกี่ยวข้องกับเชื้อราในดิน
+สามารถส่งผลต่อระบบท่อลำเลียงน้ำของต้นกล้วย
+""",
+        "advice": """
+⚠️ หากพบอาการผิดปกติควรแยกและตรวจสอบต้นที่สงสัย
+และปรึกษาผู้เชี่ยวชาญด้านโรคพืชเพื่อยืนยันสาเหตุ
+"""
     }
 }
 
 
 # =========================================================
-# Model
+# Path ของ Model
 # =========================================================
-@st.cache_resource
-def load_model():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = models.resnet50(weights=None)
-    model.fc = nn.Linear(model.fc.in_features, len(CLASS_NAMES))
+MODEL_PATHS = [
+    "best_resnet50_banana.pth",
+    "best_resnet50.pth",
+    "model/best_resnet50_banana.pth",
+    "models/best_resnet50_banana.pth"
+]
 
-    # รองรับทั้งไฟล์ที่เป็น state_dict และ checkpoint บางรูปแบบ
-    model_path = "best_resnet50_banana.pth"
 
-    if not os.path.exists(model_path):
-        # รองรับกรณีเก็บไว้ในโฟลเดอร์ models/
-        model_path = os.path.join("models", "best_resnet50_banana.pth")
+def find_model():
 
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(
-            "ไม่พบไฟล์ best_resnet50_banana.pth ใน GitHub Repository "
-            "กรุณาอัปโหลดไฟล์โมเดลไว้ที่ root ของ repository"
-        )
+    for path in MODEL_PATHS:
 
-    try:
-        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
-    except TypeError:
-        checkpoint = torch.load(model_path, map_location=device)
+        if os.path.exists(path):
+            return path
 
-    # รองรับ checkpoint ที่มี state_dict
-    if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
-        state_dict = checkpoint["state_dict"]
-    else:
-        state_dict = checkpoint
+    return None
 
-    # แก้กรณี key มี "module." จาก DataParallel
-    clean_state_dict = {}
-    for key, value in state_dict.items():
-        new_key = key.replace("module.", "", 1) if key.startswith("module.") else key
-        clean_state_dict[new_key] = value
 
-    model.load_state_dict(clean_state_dict, strict=True)
-    model.to(device)
-    model.eval()
+MODEL_PATH = find_model()
 
-    return model, device
+
+# =========================================================
+# Device
+# =========================================================
+
+DEVICE = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
 
 
 # =========================================================
 # Transform
+# ต้องใกล้เคียงกับตอน Train
 # =========================================================
+
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -233,352 +261,589 @@ transform = transforms.Compose([
 
 
 # =========================================================
-# Prediction
+# สร้าง ResNet50
 # =========================================================
+
+@st.cache_resource
+def create_model():
+
+    model = models.resnet50(weights=None)
+
+    num_features = model.fc.in_features
+
+    model.fc = nn.Linear(
+        num_features,
+        len(CLASS_NAMES)
+    )
+
+    if MODEL_PATH is None:
+        return model, False, None
+
+    try:
+
+        checkpoint = torch.load(
+            MODEL_PATH,
+            map_location=DEVICE
+        )
+
+        # กรณี checkpoint เป็น state_dict โดยตรง
+        if isinstance(checkpoint, dict):
+
+            if "state_dict" in checkpoint:
+                state_dict = checkpoint["state_dict"]
+
+            elif "model_state_dict" in checkpoint:
+                state_dict = checkpoint["model_state_dict"]
+
+            else:
+                state_dict = checkpoint
+
+        else:
+            state_dict = checkpoint
+
+        # รองรับกรณีชื่อ key มี module.
+        new_state_dict = {}
+
+        for key, value in state_dict.items():
+
+            if key.startswith("module."):
+                key = key.replace("module.", "", 1)
+
+            new_state_dict[key] = value
+
+        model.load_state_dict(
+            new_state_dict,
+            strict=True
+        )
+
+        model.to(DEVICE)
+        model.eval()
+
+        return model, True, None
+
+    except Exception as e:
+
+        return model, False, str(e)
+
+
+model, model_loaded, model_error = create_model()
+
+
+# =========================================================
+# Function Predict
+# =========================================================
+
 def predict_image(image):
-    model, device = load_model()
 
     image_rgb = image.convert("RGB")
-    tensor = transform(image_rgb).unsqueeze(0).to(device)
+
+    image_tensor = transform(image_rgb)
+
+    image_tensor = image_tensor.unsqueeze(0)
+
+    image_tensor = image_tensor.to(DEVICE)
 
     with torch.no_grad():
-        output = model(tensor)
-        probabilities = torch.softmax(output, dim=1)[0]
 
-    confidence, predicted_index = torch.max(probabilities, dim=0)
+        outputs = model(image_tensor)
+
+        probabilities = torch.softmax(
+            outputs,
+            dim=1
+        )[0]
+
+    predicted_index = torch.argmax(
+        probabilities
+    ).item()
+
+    predicted_class = CLASS_NAMES[
+        predicted_index
+    ]
+
+    confidence = probabilities[
+        predicted_index
+    ].item()
 
     return (
-        CLASS_NAMES[predicted_index.item()],
-        float(confidence.item()),
-        probabilities.cpu().tolist()
+        predicted_class,
+        confidence,
+        probabilities.cpu()
     )
-
-
-# =========================================================
-# Sidebar
-# =========================================================
-with st.sidebar:
-    st.markdown("## 🍌 Banana Leaf AI")
-    st.caption("ระบบจำแนกโรคและความเสียหายของใบกล้วย")
-
-    st.markdown("---")
-    st.markdown("### เมนู")
-
-    page = st.radio(
-        "ไปยังหน้า",
-        ["🏠 Home", "🔍 Predict", "📚 Disease Information"],
-        index=["🏠 Home", "🔍 Predict", "📚 Disease Information"].index(
-            st.session_state.page
-        ),
-        label_visibility="collapsed"
-    )
-
-    st.session_state.page = page
-
-    st.markdown("---")
-    st.markdown("### 🤖 Deep Learning")
-    st.info("ResNet50\n\n5 Classes")
 
 
 # =========================================================
 # Header
 # =========================================================
+
 st.markdown("""
 <div class="hero">
-    <h1>🍌 Banana Leaf AI</h1>
-    <p>ระบบ AI สำหรับจำแนกโรคและความเสียหายของใบกล้วยด้วย ResNet50</p>
+
+<div class="hero-title">
+🍌 Banana Leaf AI
+</div>
+
+<div class="hero-subtitle">
+ระบบ AI สำหรับจำแนกโรคและความเสียหายของใบกล้วยด้วย ResNet50
+</div>
+
 </div>
 """, unsafe_allow_html=True)
 
 
 # =========================================================
-# HOME
+# Sidebar
 # =========================================================
-if st.session_state.page == "🏠 Home":
 
-    st.markdown("## 👋 ยินดีต้อนรับ")
-    st.write(
-        "อัปโหลดภาพใบกล้วย แล้วให้ AI วิเคราะห์ประเภทของใบกล้วย "
-        "พร้อมแสดงเปอร์เซ็นต์ความมั่นใจและข้อมูลประกอบ"
-    )
+st.sidebar.markdown(
+    "# 🍌 Banana Leaf AI"
+)
 
-    # =====================================================
-    # วิเคราะห์ได้จากหน้า Home โดยตรง
-    # =====================================================
-    st.markdown("### 📷 วิเคราะห์ใบกล้วยทันที")
-    st.write("เลือกรูปใบกล้วยจากเครื่อง แล้วกด **🔍 วิเคราะห์ภาพ** ได้เลย")
+st.sidebar.markdown("---")
 
-    home_uploaded = st.file_uploader(
-        "อัปโหลดภาพใบกล้วย",
-        type=["jpg", "jpeg", "png", "webp"],
-        key="home_uploader"
-    )
+page = st.sidebar.radio(
+    "เมนู",
+    [
+        "🏠 Home",
+        "🔍 Predict",
+        "📚 Disease Information"
+    ]
+)
 
-    if home_uploaded is not None:
-        home_image = Image.open(home_uploaded).convert("RGB")
+st.sidebar.markdown("---")
 
-        left, right = st.columns([1, 1])
+st.sidebar.info(
+    f"""
+🤖 Model: ResNet50
 
-        with left:
-            st.image(
-                home_image,
-                caption="ภาพที่เลือก",
-                use_container_width=True
-            )
+📊 Classes: 5
 
-        with right:
-            st.markdown("#### 🤖 ResNet50 พร้อมวิเคราะห์")
-            st.write("ระบบจะจำแนกภาพเป็น 1 ใน 5 Class")
+💻 Device: {DEVICE}
+"""
+)
 
-            if st.button(
-                "🔍 วิเคราะห์ภาพ",
-                type="primary",
-                use_container_width=True,
-                key="home_predict_button"
-            ):
-                with st.spinner("AI กำลังวิเคราะห์ภาพ..."):
-                    try:
-                        result = predict_image(home_image)
-                        st.session_state.uploaded_image = home_image
-                        st.session_state.prediction = result
-                        st.success("วิเคราะห์เสร็จแล้ว!")
-                    except Exception as e:
-                        st.error(f"เกิดข้อผิดพลาด: {e}")
 
-    # แสดงผลบนหน้า Home ทันที
-    if st.session_state.prediction is not None:
+# =========================================================
+# ตรวจสอบ Model
+# =========================================================
 
-        predicted_class, confidence, probabilities = st.session_state.prediction
-        info = DISEASE_INFO[predicted_class]
+if not model_loaded:
 
-        st.markdown("---")
-        st.markdown("## 📊 ผลการวิเคราะห์")
+    if MODEL_PATH is None:
 
-        if st.session_state.uploaded_image is not None:
-            img_col, result_col = st.columns([1, 1])
-
-            with img_col:
-                st.image(
-                    st.session_state.uploaded_image,
-                    caption="ภาพที่วิเคราะห์",
-                    use_container_width=True
-                )
-
-            with result_col:
-                st.markdown(
-                    f"""
-                    <div class="result-box">
-                        <h3>{info['icon']} ผลการทำนาย</h3>
-                        <h2>{predicted_class}</h2>
-                        <p>ความมั่นใจของโมเดล</p>
-                        <h1>{confidence * 100:.2f}%</h1>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-        if predicted_class == "Healthy Banana leaf":
-            st.success("🌱 ใบกล้วยปกติ — โมเดลจำแนกภาพนี้อยู่ในกลุ่มใบกล้วยปกติ")
-        else:
-            st.warning(
-                f"⚠️ พบความผิดปกติ: {predicted_class}\n\n"
-                f"{info['advice']}"
-            )
-
-        st.markdown("### 📈 ความน่าจะเป็นทั้ง 5 Class")
-
-        chart_data = {
-            "Class": CLASS_NAMES,
-            "Probability (%)": [p * 100 for p in probabilities]
-        }
-
-        st.bar_chart(
-            chart_data,
-            x="Class",
-            y="Probability (%)",
-            horizontal=True
+        st.warning(
+            "⚠️ ไม่พบไฟล์โมเดล ResNet50 ใน GitHub"
         )
 
-        with st.expander("🩺 ดูแนวทางดูแล / จัดการ", expanded=True):
-            st.write(info["treatment"])
+        st.info(
+            "กรุณาอัปโหลดไฟล์ "
+            "`best_resnet50_banana.pth` "
+            "ไว้ใน Repository เดียวกับ app.py"
+        )
 
-        if st.button(
-            "🔄 เริ่มการวิเคราะห์ใหม่",
-            use_container_width=True,
-            key="home_reset_button"
-        ):
-            st.session_state.uploaded_image = None
-            st.session_state.prediction = None
-            st.rerun()
+    else:
+
+        st.error(
+            "❌ ไม่สามารถโหลดโมเดลได้"
+        )
+
+        if model_error:
+            st.code(model_error)
+
+
+# =========================================================
+# HOME
+# =========================================================
+
+if page == "🏠 Home":
+
+    st.markdown(
+        "## 👋 ยินดีต้อนรับ"
+    )
+
+    st.write(
+        "ระบบสามารถวิเคราะห์ภาพใบกล้วยและจำแนกออกเป็น 5 Class "
+        "พร้อมแสดงเปอร์เซ็นต์ความมั่นใจของโมเดล"
+    )
 
     st.markdown("---")
-    st.markdown("## 🌱 ประเภทที่ระบบสามารถจำแนก")
 
-    for i, name in enumerate(CLASS_NAMES, 1):
-        info = DISEASE_INFO[name]
-        st.write(f"**{i}. {info['icon']} {name}**")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.markdown("""
+        <div class="card">
+
+        <h3>📷 วิเคราะห์ภาพ</h3>
+
+        <p>
+        อัปโหลดรูปใบกล้วยเพื่อให้ AI วิเคราะห์
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button(
+            "🔍 เริ่มทำนาย",
+            use_container_width=True
+        ):
+
+            st.session_state["page"] = "predict"
+
+            st.switch_page(
+                st.query_params.get(
+                    "page",
+                    "app.py"
+                )
+            )
+
+    with col2:
+
+        st.markdown("""
+        <div class="card">
+
+        <h3>🤖 ResNet50</h3>
+
+        <p>
+        โมเดล Deep Learning สำหรับจำแนกใบกล้วย
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+
+        st.markdown("""
+        <div class="card">
+
+        <h3>📊 ผลการวิเคราะห์</h3>
+
+        <p>
+        แสดงผลการทำนายและความมั่นใจ
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    st.markdown(
+        "## 🌱 ประเภทที่ระบบสามารถจำแนก"
+    )
+
+    for i, class_name in enumerate(CLASS_NAMES):
+
+        info = DISEASE_INFO[class_name]
+
+        if class_name == "Healthy Banana leaf":
+
+            st.success(
+                f"🌱 **{class_name}** — ใบกล้วยปกติ"
+            )
+
+        else:
+
+            st.write(
+                f"{info['icon']} **{class_name}**"
+            )
 
 
 # =========================================================
 # PREDICT
 # =========================================================
-elif st.session_state.page == "🔍 Predict":
 
-    st.markdown("## 🔍 วิเคราะห์ใบกล้วย")
-    st.write("อัปโหลดภาพ แล้วกดปุ่ม **วิเคราะห์ภาพ**")
+elif page == "🔍 Predict":
 
-    uploaded = st.file_uploader(
-        "📷 เลือกรูปใบกล้วย",
-        type=["jpg", "jpeg", "png", "webp"],
-        key="banana_uploader"
+    st.markdown(
+        "## 🔍 วิเคราะห์ใบกล้วย"
     )
 
-    if uploaded is not None:
-        image = Image.open(uploaded).convert("RGB")
-        st.session_state.uploaded_image = image
+    st.write(
+        "อัปโหลดภาพใบกล้วย จากนั้นกดปุ่ม **วิเคราะห์ภาพ**"
+    )
 
-        left, right = st.columns([1, 1])
+    uploaded_file = st.file_uploader(
+        "📷 เลือกรูปใบกล้วย",
+        type=[
+            "jpg",
+            "jpeg",
+            "png",
+            "webp"
+        ]
+    )
 
-        with left:
-            st.image(
-                image,
-                caption="ภาพที่อัปโหลด",
-                use_container_width=True
-            )
+    if uploaded_file is not None:
 
-        with right:
-            st.markdown("### 🤖 พร้อมวิเคราะห์")
-            st.write("ระบบจะใช้ ResNet50 จำแนกภาพเป็น 1 ใน 5 Class")
-
-            if st.button(
-                "🔍 วิเคราะห์ภาพ",
-                type="primary",
-                use_container_width=True
-            ):
-                with st.spinner("AI กำลังวิเคราะห์ภาพ..."):
-                    try:
-                        result = predict_image(image)
-                        st.session_state.prediction = result
-                    except Exception as e:
-                        st.error(f"เกิดข้อผิดพลาดในการโหลดหรือใช้งานโมเดล: {e}")
-
-    # ผลการทำนาย
-    if st.session_state.prediction is not None:
-
-        predicted_class, confidence, probabilities = st.session_state.prediction
-        info = DISEASE_INFO[predicted_class]
-
-        st.markdown("---")
-        st.markdown("## 📊 ผลการวิเคราะห์")
-
-        r1, r2 = st.columns([1, 1])
-
-        with r1:
-            st.markdown(
-                f"""
-                <div class="result-box">
-                    <h3>{info['icon']} ผลการทำนาย</h3>
-                    <h2>{predicted_class}</h2>
-                    <p>ความมั่นใจของโมเดล</p>
-                    <h1>{confidence * 100:.2f}%</h1>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        with r2:
-            if predicted_class == "Healthy Banana leaf":
-                st.markdown(
-                    """
-                    <div class="healthy">
-                        <h3>🌱 ใบกล้วยปกติ</h3>
-                        <p>โมเดลจำแนกภาพนี้อยู่ในกลุ่มใบกล้วยปกติ</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f"""
-                    <div class="warning">
-                        <h3>⚠️ พบความผิดปกติ</h3>
-                        <p><b>{predicted_class}</b></p>
-                        <p>{info['advice']}</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-        st.markdown("### 📈 ความน่าจะเป็นทั้ง 5 Class")
-
-        chart_data = {
-            "Class": CLASS_NAMES,
-            "Probability (%)": [p * 100 for p in probabilities]
-        }
-
-        st.bar_chart(
-            chart_data,
-            x="Class",
-            y="Probability (%)",
-            horizontal=True
+        image = Image.open(
+            uploaded_file
         )
 
-        st.markdown("### 📚 ข้อมูล")
-        st.info(info["description"])
-
-        st.markdown("### 🩺 แนวทางดูแลเบื้องต้น")
-        st.success(info["treatment"])
-
-        st.caption(
-            "แนวทางนี้เป็นข้อมูลเบื้องต้นจากหลักการจัดการโรคและศัตรูพืชแบบผสมผสาน ควรให้ผู้เชี่ยวชาญยืนยันโรคก่อนใช้วิธีควบคุมเฉพาะ"
-        )
-
-        if st.button(
-            "🔄 เริ่มการวิเคราะห์ใหม่",
+        st.image(
+            image,
+            caption="ภาพที่เลือก",
             use_container_width=True
-        ):
-            st.session_state.uploaded_image = None
-            st.session_state.prediction = None
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            analyze = st.button(
+                "🔍 วิเคราะห์ภาพ",
+                use_container_width=True,
+                type="primary"
+            )
+
+        with col2:
+
+            clear = st.button(
+                "🔄 เริ่มการวิเคราะห์ใหม่",
+                use_container_width=True
+            )
+
+        if clear:
+
             st.rerun()
 
-    else:
-        st.markdown(
-            '<p class="small-note">ยังไม่มีผลการวิเคราะห์ กรุณาอัปโหลดรูปและกดปุ่มวิเคราะห์</p>',
-            unsafe_allow_html=True
-        )
+        if analyze:
+
+            if not model_loaded:
+
+                st.error(
+                    "❌ ยังไม่สามารถใช้งานโมเดลได้"
+                )
+
+            else:
+
+                with st.spinner(
+                    "🤖 ResNet50 กำลังวิเคราะห์..."
+                ):
+
+                    predicted_class, confidence, probabilities = predict_image(
+                        image
+                    )
+
+                confidence_percent = confidence * 100
+
+                # ==========================================
+                # HEALTHY
+                # ==========================================
+
+                if predicted_class == "Healthy Banana leaf":
+
+                    st.markdown(
+                        f"""
+                        <div class="result-normal">
+
+                        <div class="big-result">
+                        🌱 ใบกล้วยปกติ
+                        </div>
+
+                        <br>
+
+                        <b>ผลการทำนาย</b>
+
+                        <br>
+
+                        Healthy Banana leaf
+
+                        <br><br>
+
+                        <b>ความมั่นใจของโมเดล</b>
+
+                        <div class="confidence">
+                        {confidence_percent:.2f}%
+                        </div>
+
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    st.success(
+                        "✅ ระบบจำแนกภาพนี้เป็นใบกล้วยปกติ"
+                    )
+
+                    st.info(
+                        "🌱 ไม่พบลักษณะที่ตรงกับ Class "
+                        "โรคหรือความเสียหายที่โมเดลได้รับการฝึกให้จำแนก"
+                    )
+
+                # ==========================================
+                # DISEASE / DAMAGE
+                # ==========================================
+
+                else:
+
+                    info = DISEASE_INFO[
+                        predicted_class
+                    ]
+
+                    st.markdown(
+                        f"""
+                        <div class="result-disease">
+
+                        <div class="big-result">
+                        {info['icon']} พบความผิดปกติ
+                        </div>
+
+                        <br>
+
+                        <b>ผลการทำนาย</b>
+
+                        <br>
+
+                        {predicted_class}
+
+                        <br><br>
+
+                        <b>ความมั่นใจของโมเดล</b>
+
+                        <div class="confidence">
+                        {confidence_percent:.2f}%
+                        </div>
+
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    st.warning(
+                        "⚠️ ภาพนี้ถูกจำแนกเป็นกลุ่มที่มีความผิดปกติ"
+                    )
+
+                    st.markdown(
+                        "### ⚠️ คำแนะนำ"
+                    )
+
+                    st.write(
+                        info["advice"]
+                    )
+
+                # ==========================================
+                # Probability
+                # ==========================================
+
+                st.markdown("---")
+
+                st.markdown(
+                    "### 📈 ความน่าจะเป็นของทั้ง 5 Class"
+                )
+
+                probability_dict = {}
+
+                for i, class_name in enumerate(CLASS_NAMES):
+
+                    probability_dict[
+                        class_name
+                    ] = float(
+                        probabilities[i].item()
+                    )
+
+                st.bar_chart(
+                    probability_dict
+                )
+
+                # ==========================================
+                # ตาราง
+                # ==========================================
+
+                st.markdown(
+                    "### 📊 รายละเอียดความมั่นใจ"
+                )
+
+                for i, class_name in enumerate(CLASS_NAMES):
+
+                    percent = (
+                        probabilities[i].item()
+                        * 100
+                    )
+
+                    if class_name == "Healthy Banana leaf":
+
+                        st.write(
+                            f"🌱 {class_name}: "
+                            f"**{percent:.2f}%**"
+                        )
+
+                    else:
+
+                        st.write(
+                            f"🔹 {class_name}: "
+                            f"**{percent:.2f}%**"
+                        )
 
 
 # =========================================================
 # DISEASE INFORMATION
 # =========================================================
-elif st.session_state.page == "📚 Disease Information":
 
-    st.markdown("## 📚 ข้อมูลโรคและความเสียหาย")
-    st.write("เลือกประเภทเพื่อดูข้อมูลเบื้องต้น")
+elif page == "📚 Disease Information":
 
-    selected = st.selectbox(
+    st.markdown(
+        "## 📚 ข้อมูลโรคและความเสียหายของใบกล้วย"
+    )
+
+    st.write(
+        "เลือกประเภทที่ต้องการดูข้อมูล"
+    )
+
+    selected_class = st.selectbox(
         "เลือกประเภท",
         CLASS_NAMES
     )
 
-    info = DISEASE_INFO[selected]
+    info = DISEASE_INFO[
+        selected_class
+    ]
+
+    st.markdown("---")
+
+    if selected_class == "Healthy Banana leaf":
+
+        st.success(
+            f"🌱 {info['title']}"
+        )
+
+    else:
+
+        st.warning(
+            f"{info['icon']} {info['title']}"
+        )
 
     st.markdown(
         f"""
-        <div class="result-box">
-            <h1>{info['icon']} {info['title']}</h1>
-            <p>{info['description']}</p>
+        <div class="card">
+
+        <h3>
+        {info['icon']} {info['title']}
+        </h3>
+
+        <p>
+        {info['description']}
+        </p>
+
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown("### ⚠️ คำแนะนำเบื้องต้น")
-    st.warning(info["advice"])
+    st.markdown(
+        "### 💡 คำแนะนำ"
+    )
 
-    st.markdown("### 🩺 แนวทางดูแล / จัดการ")
-    st.success(info["treatment"])
+    st.info(
+        info["advice"]
+    )
+
+    st.markdown("---")
+
+    st.markdown(
+        "### 📌 หมายเหตุ"
+    )
 
     st.caption(
-        "หมายเหตุ: ผลจาก AI เป็นการจำแนกจากภาพ ไม่ควรใช้แทนการวินิจฉัยโดยผู้เชี่ยวชาญ"
+        "ผลการทำนายเป็นผลจากโมเดล ResNet50 "
+        "และควรใช้เป็นข้อมูลประกอบการตรวจสอบเบื้องต้น "
+        "ไม่ควรใช้แทนการวินิจฉัยโดยผู้เชี่ยวชาญด้านโรคพืช"
     )
